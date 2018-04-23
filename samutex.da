@@ -1,0 +1,53 @@
+from random import randint
+from time import sleep
+
+class Proc(process):  
+  def request():
+    if each(sent(('request', t, _)), has= sent(('release', t, _))):           # To prevent requesting if already requested
+      t = max(setof(t, received(('request', t, _))) | setof(t, sent(('request', t, _))) or {0})
+      #output('Sending ' + str(t))
+      send(('request', t+1, self), to=others)
+
+  def reply():
+    if some(received(('request', t, p)), has= not sent(('reply', t, p))): # has= prevents flooding
+      #output('acking ' + str(t))
+      send(('reply', t, p), to=p)
+
+  def enter_cs():
+    if some(sent(('request', t, _)), has= not sent(('release', t, _)) and each(p in others, has= received(('reply', t, _), from_= p))) and \
+       each(received(('request', t2, p)), has= ((t2, p) >= (t, self) or received(('release', t2, p)))):
+      if not in_cs: output('Enter CS')
+      in_cs = True
+      my_t = t
+  
+  def exit_cs():
+    if in_cs:
+      output('Exit CS')
+      in_cs = False
+      send(('release', my_t, self), to=others)
+
+  def setup(others:set): self.in_cs = False; self.my_t = 0
+
+  # Auto generated stuff begin
+  def run():
+    output('saksham1')
+    while True:
+      x = randint(1, 4)
+      if await(x == 1):
+        request()
+      elif x == 2:
+        reply()
+      elif x == 3:
+        enter_cs()
+      elif x == 4:
+        exit_cs()
+  # Auto generated stuff end
+
+def main():
+  output('saksham3')
+  ps = new(Proc, num= 2)
+  for p in ps: setup(p, [ps - {p}])
+  output('saksham4')
+  start(ps)
+  output('saksham5')
+  #send(('start'), to=proposers[0])
